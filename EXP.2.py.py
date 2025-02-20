@@ -1,72 +1,50 @@
-
 import numpy as np
 
-def step_function(x):
-    return np.where(x >= 0, 1, 0)
-
-def step_derivative(x):
-    return np.zeros_like(x)  # Zero derivative for the step function
-
-class MLP:
-    def __init__(self, input_size, hidden_size, output_size, learning_rate=0.1, epochs=10000):
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.output_size = output_size
+class Perceptron:
+    def __init__(self, input_size, learning_rate=0.1, epochs=100):
+        self.weights = np.random.randn(input_size + 1)  # +1 for bias
         self.learning_rate = learning_rate
         self.epochs = epochs
-        
-        # Initialize weights and biases
-        self.weights_input_hidden = np.random.randn(input_size, hidden_size)
-        self.weights_hidden_output = np.random.randn(hidden_size, output_size)
-        self.bias_hidden = np.random.randn(hidden_size)
-        self.bias_output = np.random.randn(output_size)
-    
-    def forward(self, X):
-        self.hidden_input = np.dot(X, self.weights_input_hidden) + self.bias_hidden
-        self.hidden_output = step_function(self.hidden_input)
-        self.final_input = np.dot(self.hidden_output, self.weights_hidden_output) + self.bias_output
-        self.final_output = step_function(self.final_input)
-        return self.final_output
-    
-    def backward(self, X, y, output):
-        error = y - output
-        d_output = error * step_derivative(output)
-        error_hidden = d_output.dot(self.weights_hidden_output.T)
-        d_hidden = error_hidden * step_derivative(self.hidden_output)
 
-        # Update weights and biases
-        self.weights_hidden_output += self.hidden_output.T.dot(d_output) * self.learning_rate
-        self.bias_output += np.sum(d_output, axis=0) * self.learning_rate
-        self.weights_input_hidden += X.T.dot(d_hidden) * self.learning_rate
-        self.bias_hidden += np.sum(d_hidden, axis=0) * self.learning_rate
+    def activation(self, x):
+        return 1 if x >= 0 else 0
+
+    def predict(self, x):
+        x = np.insert(x, 0, 1)  # Add bias term
+        return self.activation(np.dot(self.weights, x))
 
     def train(self, X, y):
+        X = np.c_[np.ones(X.shape[0]), X]  # Add bias column
         for _ in range(self.epochs):
-            output = self.forward(X)
-            self.backward(X, y, output)
+            for i in range(X.shape[0]):
+                y_pred = self.activation(np.dot(self.weights, X[i]))
+                self.weights += self.learning_rate * (y[i] - y_pred) * X[i]
 
-    def predict(self, X):
-        return self.forward(X)
+    def evaluate(self, X, y):
+        y_pred = np.array([self.predict(x) for x in X])
+        accuracy = np.mean(y_pred == y) * 100
+        return accuracy, y_pred
 
-# XOR dataset
-X_xor = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-y_xor = np.array([[0], [1], [1], [0]])
+def train_perceptron(X, y, name):
+    p = Perceptron(input_size=X.shape[1])
+    p.train(X, y)
+    accuracy, predictions = p.evaluate(X, y)
+    print(f"{name} Accuracy: {accuracy:.2f}% | Predictions: {predictions}")
+    return predictions, y
 
-# Train MLP using step function
-mlp = MLP(input_size=2, hidden_size=2, output_size=1)
-mlp.train(X_xor, y_xor)
-    
-predictions = mlp.predict(X_xor)
+fun_X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
 
-# Tabled output for clarity
-import pandas as pd
-output_table = pd.DataFrame({
-    'Input 1': X_xor[:, 0],
-    'Input 2': X_xor[:, 1],
-    'Expected Output': y_xor.flatten(),
-    'Predicted Output': predictions.astype(int).flatten()
-})
+fun1_y = np.array([0, 0, 0, 1])  # NAND
+fun2_y = np.array([0, 0, 1, 0])  # Custom function
+fun3_y = np.array([0, 1, 0, 0])  # Custom function
+fun4_y = np.array([1, 0, 0, 0])  # Custom function
 
-print("\nXOR MLP Predictions with Step Function (Table Format):\n")
-print(output_table.to_string(index=False))
+fun1_predictions, _ = train_perceptron(fun_X, fun1_y, "Fun1")
+fun2_predictions, _ = train_perceptron(fun_X, fun2_y, "Fun2")
+fun3_predictions, _ = train_perceptron(fun_X, fun3_y, "Fun3")
+fun4_predictions, _ = train_perceptron(fun_X, fun4_y, "Fun4")
 
+final_X = np.column_stack([fun1_predictions, fun2_predictions, fun3_predictions, fun4_predictions])
+final_y = np.array([0, 1, 1, 0])
+
+final_predictions, actual_y = train_perceptron(final_X, final_y, "Final Perceptron")
