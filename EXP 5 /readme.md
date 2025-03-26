@@ -141,9 +141,6 @@ for filter_size in filter_sizes:
                 results[key] = (history, test_acc)  # Store history and test accuracy
                 print(f"
 
-Test Accuracy: {test_acc:.4f}\n")
-
-# Plotting results for accuracy and loss
 plt.figure(figsize=(12, 8))
 for key, (history, _) in results.items():
     plt.plot(history.history['val_accuracy'], label=key)
@@ -152,40 +149,54 @@ plt.ylabel('Validation Accuracy')
 plt.title('Effect of Hyperparameters on Model Performance')
 plt.legend(loc='upper right')
 plt.show()
-
-# Plot confusion matrix for the best performing model (highest test accuracy)
-best_config = max(results, key=lambda x: results[x][1])  # Get the config with the highest test accuracy
-best_history, best_test_acc = results[best_config]
-
-# Use the best configuration's model to predict
-model = create_model(*best_config.split(', '))
-model.fit(x_train, y_train, epochs=10, batch_size=32, validation_data=(x_test, y_test), verbose=2)
-y_pred = np.argmax(model.predict(x_test), axis=1)
-cm = confusion_matrix(y_test, y_pred)
-
-# Plotting the Confusion Matrix for the best model
-plt.figure(figsize=(8,6))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
-plt.xlabel('Predicted Label')
-plt.ylabel('True Label')
-plt.title('Confusion Matrix - Best Model')
-plt.show()
 ```
-
----
-## Results and Visualizations:
-- **Accuracy Curves**: We plot the training and validation accuracy for each configuration to compare how well the model performs during training and validation.
-- **Loss Curves**: The training and validation loss curves help to evaluate how well the model is learning.
-- **Confusion Matrix**: The confusion matrix for the best-performing model is plotted to visualize how well the model is performing across the different classes.
-
 ---
 
+## Performance Evaluation
+
+- The model's accuracy is tested with different hyperparameters to observe their effects.
+
+- **Filter Size**: 
+  - Affects feature extraction, with larger filters capturing more details but requiring more computations.
+
+- **Regularization**: 
+  - Helps in preventing overfitting but may reduce training accuracy.
+
+- **Batch Size**: 
+  - Smaller batch sizes may improve generalization but increase training time.
+
+- **Optimizer Comparison**:
+  - **Adam** generally provides better accuracy compared to **SGD**.
+  - **SGD** may take longer to converge but can generalize well in some cases.
+
+- **Loss Visualization**:
+  - Training loss vs. validation loss is plotted over epochs to understand if the model overfits.
+  - Helps determine the best epoch count for optimal performance.
+
+- **Line Plot of Validation Accuracy**:
+  - A line plot visualizes how validation accuracy changes with different configurations, helping identify the best-performing setup.
+---
 ## My Comment:
-- **Effect of Filter Size**: Larger filters tend to capture more complex features, which could be beneficial for us, but they make the training slower and
- increase the risk of overfitting—.
-- **Effect of Regularization**: Stronger regularization (larger L2 values) helps to prevent overfitting, especially when we are training with smaller filter sizes.
-- **Effect of Batch Size**: Larger batch sizes usually speed up training by processing more samples at once,
- but smaller batches often help with better generalization, even though training may take longer.
-- **Effect of Optimizer**: Adam generally outperforms SGD due to its adaptive learning rate.
- 
+- **Effect of Filter Size**:
+    Larger filters tend to capture more complex features, but they make the training slower and increase the risk of overfitting.
+- **Effect of Regularization**:
+    Stronger regularization (larger L2 values) helps to prevent overfitting, especially when we are training with smaller filter sizes.
+    Models with Reg=0.0001 perform better than those with Reg=0.001.
+- **Effect of Batch Size**:
+   Larger batch size (64) stabilizes training but may lead to slightly lower validation accuracy compared to batch size 32.
+   Smaller batch size (32) allows for more weight updates per epoch, which can help generalization.
+- **Effect of Optimizer**:
+    Adam generally outperforms SGD due to its adaptive learning rate.
+
+## Best-Performing Model
+
+Based on the trends, the best-performing models have the following hyperparameters:
+
+- **Filter Size**: 5
+- **Regularization**: 0.0001
+- **Batch Size**: 32
+- **Optimizer**: Adam
+
+These parameters yield the highest validation accuracy (~90%).
+
 ---
